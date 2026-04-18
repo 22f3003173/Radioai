@@ -1,0 +1,17 @@
+
+:root {
+  --primary: #1a4e8a;
+  --secondary: #f36f21;
+  --background: #f6f8fb;
+  --card-bg: #ffffff;
+  --text-main: #1a1a1a;
+  --text-light: #6b7280;
+  --border: #e5e7eb;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--background);
+  color: var(--text-main);
+}

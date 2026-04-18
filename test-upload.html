@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test File Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        textarea, input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            min-height: 100px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test File Upload with AI Analysis</h1>
+
+    <div class="form-group">
+        <label for="systemPrompt">System Prompt (Optional):</label>
+        <textarea id="systemPrompt" rows="3" placeholder="You are a helpful assistant...">You are a helpful assistant that analyzes server logs.</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="userPrompt">User Prompt:</label>
+        <textarea id="userPrompt" rows="4" placeholder="Describe what you want to generate...">Please analyze this medical application server log file and provide:
+1. Total number of API requests
+2. Most common endpoints (top 5)
+3. Any errors or warnings found
+4. Time range of the logs</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="fileInput">Upload File:</label>
+        <input type="file" id="fileInput">
+        <p style="font-size: 12px; color: #666;">
+            File to test: medsum-logs-2026-01-31-3-5-PM.txt
+        </p>
+    </div>
+
+    <button id="generateBtn" onclick="handleGenerate()">Generate Analysis</button>
+
+    <div id="status"></div>
+
+    <h3>Output:</h3>
+    <div id="output">Results will appear here...</div>
+
+    <script>
+        async function handleGenerate() {
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const userPrompt = document.getElementById('userPrompt').value;
+            const fileInput = document.getElementById('fileInput');
+            const outputDiv = document.getElementById('output');
+            const statusDiv = document.getElementById('status');
+            const generateBtn = document.getElementById('generateBtn');
+
+            if (!userPrompt.trim()) {
+                alert('Please enter a user prompt');
+                return;
+            }
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please select a file to upload');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            statusDiv.innerHTML = '';
+            outputDiv.textContent = 'Processing...';
+
+            try {
+                // First, login to get auth cookie
+                const loginResponse = await fetch('http://localhost:5000/auth/login', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'demo@gmail.com',
+                        password: '123456'
+                    })
+                });
+
+                if (!loginResponse.ok) {
+                    throw new Error('Login failed');
+                }
+
+                statusDiv.innerHTML = '<div class="status success">✓ Logged in successfully</div>';
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('userPrompt', userPrompt);
+                if (systemPrompt.trim()) {
+                    formData.append('systemPrompt', systemPrompt);
+                }
+
+                // Add file
+                formData.append('files', fileInput.files[0]);
+
+                // Send generate request
+                const response = await fetch('http://localhost:5000/generate', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    outputDiv.textContent = data.output;
+                    statusDiv.innerHTML += '<div class="status success">✓ Analysis complete!</div>';
+                } else {
+                    outputDiv.textContent = 'Error: ' + (data.error || 'Request failed');
+                    statusDiv.innerHTML += '<div class="status error">✗ ' + (data.error || 'Request failed') + '</div>';
+                }
+            } catch (error) {
+                outputDiv.textContent = 'Error: ' + error.message;
+                statusDiv.innerHTML = '<div class="status error">✗ ' + error.message + '</div>';
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Analysis';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+Steps to run
+
+Install nvm if not available
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+    source ~/.bashrc
+
+    nvm install 22
+    nvm use 22
+
+In terminal
+    cd backend 
+    npm install
+    npm start
+
+In another terminal
+    cd frontend
+    npm install
+    npm run dev
+Go to the link (http://localhost:5173/)

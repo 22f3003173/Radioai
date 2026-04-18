@@ -1,0 +1,47 @@
+/* ===============================
+   GLOBAL RESET & BASE STYLES
+   =============================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Remove default browser margin */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Smooth font rendering */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove default input/button styles */
+input,
+textarea,
+button {
+  font-family: inherit;
+  outline: none;
+}
+
+/* Button reset */
+button {
+  border: none;
+  background: none;
+}
+
+/* Anchor reset */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Prevent layout shift */
+img {
+  max-width: 100%;
+  display: block;
+}

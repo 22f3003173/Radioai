@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof:*)",
+      "Bash(psql:*)",
+      "Bash(node src/seed.js:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl:*)",
+      "Bash(node --version:*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
