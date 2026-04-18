@@ -8,12 +8,12 @@ export default defineConfig({
     host: true,
     allowedHosts: true,
     proxy: {
-      "/api": {
-        target: "http://localhost:5172",
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      }
+    "/api": {
+      target: "https://radioai.onrender.com",
+      changeOrigin: true,
+      secure: true,
+      rewrite: (path) => path.replace(/^\/api/, ""),
     }
+  }
   }
 });
