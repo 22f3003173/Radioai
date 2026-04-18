@@ -15,7 +15,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://10.67.18.206:5173",
   "https://jaylee-secluded-sue.ngrok-free.dev",
-  "https://sharpener-freeload-down.ngrok-free.dev"  // ← add this line
+  "https://sharpener-freeload-down.ngrok-free.dev",  // ← add this line
   "https://radioai-1.onrender.com"
 ];
 
