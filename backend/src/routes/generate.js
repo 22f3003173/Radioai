@@ -101,7 +101,7 @@ Write the radio script now. Start immediately with the first spoken word.
     let response;
     try {
       response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-12b-it:streamGenerateContent?alt=sse&key=${process.env.GOOGLE_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:streamGenerateContent?alt=sse&key=${process.env.GOOGLE_API_KEY}`,
         {
           method: "POST",
           headers: {
