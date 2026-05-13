@@ -45,7 +45,7 @@ export default function Dashboard() {
             title="Generate Audio"
             description="Convert text into audio"
             icon="🔊"
-            link="https://bubbleless-nonfactually-maritza.ngrok-free.dev"
+            link="https://establishment-becoming-tasks-dimension.trycloudflare.com"
             external
           />
         </div>
@@ -78,4 +78,3 @@ function Feature({ title, description, icon, link, external = false }) {
     </div>
   );
 }
-
