@@ -86,7 +86,7 @@ export default function Audio() {
     if (playingIndex === index) setPlayingIndex(null);
   };
 
-  /* 🔊 Generate Audio (mock) */
+  /* 🔊 Generate Audio */
   const handleGenerate = async () => {
     if (audioItems.length === 0 && !transcript.trim()) {
       alert("Please upload/record audio and provide translated text");
@@ -96,12 +96,48 @@ export default function Audio() {
     setLoading(true);
     setGeneratedAudio(null);
 
-    setTimeout(() => {
-      setGeneratedAudio(
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    try {
+      const formData = new FormData();
+
+      audioItems.forEach((item, index) => {
+        formData.append("audio", item.audio, item.audio.name || `recorded_audio_${index + 1}.wav`);
+        if (item.transcriptFile) {
+          formData.append("transcript", item.transcriptFile);
+        }
+      });
+
+      formData.append("text", translatedText || generateText || "");
+
+      const response = await fetch(
+        "https://establishment-becoming-tasks-dimension.trycloudflare.com/generate-audio",
+        {
+          method: "POST",
+          body: formData,
+        }
       );
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+
+      if (contentType.includes("audio")) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setGeneratedAudio(url);
+      } else {
+        const data = await response.json();
+        const audioUrl = data.url || data.audio_url || data.audioUrl || data.audio;
+        if (!audioUrl) throw new Error("No audio URL in response");
+        setGeneratedAudio(audioUrl);
+      }
+    } catch (err) {
+      console.error("Audio generation failed:", err);
+      alert(`Audio generation failed: ${err.message}`);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
