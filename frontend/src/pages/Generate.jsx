@@ -298,11 +298,7 @@ export default function Generate() {
                 <option value="default">Default</option>
                 <option value="param">Param</option>
               </select>
-              {selectedModel === "param" && (
-                <p style={{ fontSize: 12, color: "#92400e", marginTop: 6, background: "#fef9c3", padding: "6px 10px", borderRadius: 8, border: "1px solid #fde68a" }}>
-                  🇮🇳 Using Param-17B — India's own LLM. Responses may take a bit longer. File uploads not supported for this model.
-                </p>
-              )}
+
             </div>
 
             <h3 style={{ marginBottom: 12 }}>System Prompt (Optional)</h3>
