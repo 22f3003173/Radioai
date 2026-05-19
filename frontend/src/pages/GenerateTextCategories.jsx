@@ -27,16 +27,8 @@ const CATEGORIES = [
 ];
 
 const MODELS = [
-  {
-    label: "Default Model",
-    value: "default",
-    description: "Gemma 4 — fast & reliable",
-  },
-  {
-    label: "Param",
-    value: "param",
-    description: "Param-17B SFT S1 — BharatGen",
-  },
+  { label: "Default", value: "default" },
+  { label: "Param",   value: "param"   },
 ];
 
 export default function GenerateTextCategories() {
@@ -48,7 +40,6 @@ export default function GenerateTextCategories() {
     if (!selectedCategory) return;
     const cat = CATEGORIES.find((c) => c.value === selectedCategory);
     if (!cat) return;
-
     navigate("/generate", {
       state: {
         category: cat.value,
@@ -58,38 +49,38 @@ export default function GenerateTextCategories() {
     });
   };
 
-  const selectedCat = CATEGORIES.find((c) => c.value === selectedCategory);
-
   return (
     <>
       <Navbar />
       <div className="page">
         <h2>Generate Text</h2>
-        <p style={{ color: "#6b7280", marginBottom: 32 }}>
+        <p style={{ color: "#6b7280", marginBottom: 36 }}>
           Select a category and model to start generating
         </p>
 
-        {/* ── Category Dropdown Row ── */}
-        <div style={{ marginBottom: 28 }}>
-          <label
-            className="form-label"
-            htmlFor="category-select"
-            style={{ marginBottom: 8, display: "block" }}
-          >
-            Category
-          </label>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
-          >
+        {/* ── Side-by-side dropdowns ── */}
+        <div
+          style={{
+            display: "flex",
+            gap: 24,
+            flexWrap: "wrap",
+            marginBottom: 32,
+            alignItems: "flex-end",
+          }}
+        >
+          {/* Category — left */}
+          <div style={{ flex: "1 1 240px" }}>
+            <label
+              className="form-label"
+              htmlFor="category-select"
+              style={{ marginBottom: 8, display: "block" }}
+            >
+              Category
+            </label>
             <select
               id="category-select"
               className="language-select"
-              style={{ flex: "1 1 260px", maxWidth: 400 }}
+              style={{ width: "100%", marginTop: 0 }}
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
@@ -102,126 +93,48 @@ export default function GenerateTextCategories() {
                 </option>
               ))}
             </select>
-
-            <button
-              className="button login-button"
-              style={{
-                padding: "10px 24px",
-                fontSize: 14,
-                borderRadius: 10,
-                minWidth: 120,
-                opacity: selectedCategory ? 1 : 0.5,
-                cursor: selectedCategory ? "pointer" : "not-allowed",
-              }}
-              disabled={!selectedCategory}
-              onClick={handleGenerate}
-            >
-              Generate ✨
-            </button>
           </div>
 
-          {/* Preview of selected category */}
-          {selectedCat && (
-            <div
-              style={{
-                marginTop: 12,
-                padding: "12px 16px",
-                background: "#f0f7ff",
-                borderRadius: 10,
-                border: "1px solid #bfdbfe",
-                fontSize: 13,
-                color: "#1e40af",
-                maxWidth: 560,
-              }}
+          {/* Model — right */}
+          <div style={{ flex: "1 1 240px" }}>
+            <label
+              className="form-label"
+              htmlFor="model-select"
+              style={{ marginBottom: 8, display: "block" }}
             >
-              <strong>{selectedCat.icon} {selectedCat.title}:</strong>{" "}
-              {selectedCat.prompt}
-            </div>
-          )}
+              Model
+            </label>
+            <select
+              id="model-select"
+              className="language-select"
+              style={{ width: "100%", marginTop: 0 }}
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+            >
+              {MODELS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* ── Model Dropdown Row ── */}
-        <div style={{ marginBottom: 32 }}>
-          <label
-            className="form-label"
-            htmlFor="model-select"
-            style={{ marginBottom: 8, display: "block" }}
-          >
-            Model
-          </label>
-          <select
-            id="model-select"
-            className="language-select"
-            style={{ maxWidth: 400 }}
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-          >
-            {MODELS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label} — {m.description}
-              </option>
-            ))}
-          </select>
-
-          {selectedModel === "param" && (
-            <div
-              style={{
-                marginTop: 10,
-                padding: "10px 14px",
-                background: "#fef9c3",
-                borderRadius: 10,
-                border: "1px solid #fde68a",
-                fontSize: 13,
-                color: "#92400e",
-                maxWidth: 560,
-              }}
-            >
-              🇮🇳 <strong>Param-17B SFT S1</strong> — India's own language model
-              by BharatGen / IIT Bombay. Generation may take a bit longer.
-            </div>
-          )}
-        </div>
-
-        {/* ── Category Cards (quick-click alternative) ── */}
-        <p
+        {/* ── Generate button ── */}
+        <button
+          className="button login-button"
           style={{
-            color: "#9ca3af",
-            fontSize: 13,
-            marginBottom: 14,
-            fontStyle: "italic",
+            padding: "12px 40px",
+            fontSize: 15,
+            borderRadius: 10,
+            opacity: selectedCategory ? 1 : 0.5,
+            cursor: selectedCategory ? "pointer" : "not-allowed",
           }}
+          disabled={!selectedCategory}
+          onClick={handleGenerate}
         >
-          Or click a card below to jump straight in with the Default Model:
-        </p>
-        <div className="dashboard-grid">
-          {CATEGORIES.map((cat) => (
-            <div
-              key={cat.value}
-              className="card feature-card"
-              style={{
-                cursor: "pointer",
-                outline:
-                  selectedCategory === cat.value
-                    ? "2px solid #2563eb"
-                    : "none",
-              }}
-              onClick={() => {
-                setSelectedCategory(cat.value);
-                navigate("/generate", {
-                  state: {
-                    category: cat.value,
-                    prefilledPrompt: cat.prompt,
-                    model: selectedModel,
-                  },
-                });
-              }}
-            >
-              <span className="feature-icon">{cat.icon}</span>
-              <h3>{cat.title}</h3>
-              <p>Generate content related to {cat.title}</p>
-            </div>
-          ))}
-        </div>
+          Generate ✨
+        </button>
       </div>
     </>
   );
