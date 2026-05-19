@@ -295,8 +295,8 @@ export default function Generate() {
                 onChange={(e) => setSelectedModel(e.target.value)}
                 style={{ width: "100%" }}
               >
-                <option value="default">Default Model — Gemma 4</option>
-                <option value="param">Param — Param-17B SFT S1 (BharatGen)</option>
+                <option value="default">Default</option>
+                <option value="param">Param</option>
               </select>
               {selectedModel === "param" && (
                 <p style={{ fontSize: 12, color: "#92400e", marginTop: 6, background: "#fef9c3", padding: "6px 10px", borderRadius: 8, border: "1px solid #fde68a" }}>
