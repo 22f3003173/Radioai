@@ -8,17 +8,37 @@ import { API_BASE_URL } from "../config";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+// ── India-centric system prompt injected on every generation ────────────
+const INDIA_SYSTEM_PROMPT = `You are a content creator for All India Radio (AIR), producing scripts for Indian public radio broadcasts. Every piece of content you generate must strictly follow these guidelines:
+
+1. India Centric: All content must be rooted in the Indian context — reference Indian geography, languages, culture, people, and institutions. Avoid generic or western-centric examples.
+2. Public Awareness Oriented: Content must educate and inform the general public. Focus on topics that improve lives, spread awareness, and empower citizens.
+3. Based on Central Government Schemes: Wherever applicable, ground the content in actual Central Government of India national schemes and programmes (e.g., Ayushman Bharat, PM-KISAN, Beti Bachao Beti Padhao, Skill India, Jan Dhan Yojana, Swachh Bharat Mission, Digital India, etc.).
+4. Mass Awareness and Public Impact: The output should have broad reach and genuine impact value for the common citizen (aam aadmi). Prioritise clarity, simplicity, and actionable information.
+5. Locally Contextualised: Use local references, regional relevance, and ground-level realities of Indian villages, towns, and cities. Write in a warm, accessible tone suitable for a diverse Indian audience.
+
+Always produce content that is factually accurate, respectful of India's diversity, and suitable for broadcast on public radio.`;
+
 // ── Param Model config ──────────────────────────────────────────────────
 const PARAM_API_URL = "https://api.bharatgen.dev/v1/chat/completions";
 const PARAM_API_KEY =
   "Bearer bharatgen-iitb-token-wynmTmkZMNJbtYFfCoYMXmog3TQiaohxkCb2342sef";
 
-async function callParamModel(systemPrompt, userPrompt, onChunk, onDone, onError) {
-  const messages = [];
-  if (systemPrompt && systemPrompt.trim()) {
-    messages.push({ role: "system", content: systemPrompt.trim() });
-  }
-  messages.push({ role: "user", content: userPrompt.trim() });
+async function callParamModel(systemPrompt, userPrompt, fileContext, onChunk, onDone, onError) {
+  // Always inject the India-centric system prompt; append any user system prompt
+  const combinedSystem = systemPrompt && systemPrompt.trim()
+    ? `${INDIA_SYSTEM_PROMPT}\n\n${systemPrompt.trim()}`
+    : INDIA_SYSTEM_PROMPT;
+
+  // If files were provided, instruct the model to use only that content
+  const finalUserPrompt = fileContext
+    ? `Use ONLY the information from the following uploaded document(s) to generate your response. Do not use any outside knowledge.\n\n--- DOCUMENT CONTENT START ---\n${fileContext}\n--- DOCUMENT CONTENT END ---\n\nTask: ${userPrompt.trim()}`
+    : userPrompt.trim();
+
+  const messages = [
+    { role: "system", content: combinedSystem },
+    { role: "user", content: finalUserPrompt },
+  ];
 
   try {
     const res = await fetch(PARAM_API_URL, {
@@ -139,10 +159,19 @@ export default function Generate() {
 
     try {
       const formData = new FormData();
-      formData.append("userPrompt", userPrompt);
-      if (systemPrompt.trim()) {
-        formData.append("systemPrompt", systemPrompt);
-      }
+
+      // Always inject the India-centric system prompt
+      const combinedSystem = systemPrompt.trim()
+        ? `${INDIA_SYSTEM_PROMPT}\n\n${systemPrompt.trim()}`
+        : INDIA_SYSTEM_PROMPT;
+      formData.append("systemPrompt", combinedSystem);
+
+      // If files uploaded, instruct model to use ONLY file content
+      const finalUserPrompt = files.length > 0
+        ? `Use ONLY the information from the uploaded document(s) referenced below to generate your response. Do not use any outside knowledge.\n\nTask: ${userPrompt.trim()}`
+        : userPrompt.trim();
+      formData.append("userPrompt", finalUserPrompt);
+
       files.forEach((file) => {
         formData.append("files", file);
       });
@@ -217,15 +246,33 @@ export default function Generate() {
     setLoading(true);
     setOutput("");
 
+    // Read any uploaded text files into a single string
+    let fileContext = "";
+    if (files.length > 0) {
+      const texts = await Promise.all(
+        files.map(
+          (f) =>
+            new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(`[${f.name}]:\n${e.target.result}`);
+              reader.onerror = () => resolve(`[${f.name}]: (could not read file)`);
+              reader.readAsText(f);
+            })
+        )
+      );
+      fileContext = texts.join("\n\n");
+    }
+
     await callParamModel(
       systemPrompt,
       userPrompt,
-      (accumulated) => setOutput(accumulated),        // onChunk
-      (final) => {                                     // onDone
+      fileContext || null,
+      (accumulated) => setOutput(accumulated),
+      (final) => {
         setGenerateText(final);
         setLoading(false);
       },
-      (errMsg) => {                                    // onError
+      (errMsg) => {
         alert(errMsg);
         setLoading(false);
       }
@@ -317,15 +364,11 @@ export default function Generate() {
             <textarea
               className="prompt-textarea"
               rows={8}
-              placeholder={
-                selectedModel === "param"
-                  ? "Describe what you want to generate..."
-                  : "Describe what you want to generate...\n\nTip: Use {file_1}, {file_2}, etc. to reference uploaded files"
-              }
+              placeholder="Describe what you want to generate..."
               value={userPrompt}
               onChange={(e) => setUserPrompt(e.target.value)}
             />
-            {files.length > 0 && selectedModel !== "param" && (
+            {files.length > 0 && (
               <div
                 style={{
                   fontSize: "12px",
@@ -338,7 +381,7 @@ export default function Generate() {
                 }}
               >
                 <div style={{ fontWeight: "600", marginBottom: 4 }}>
-                  💡 Available placeholders:
+                  📄 Output will be generated using only these uploaded files:
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {files.map((_, index) => (
@@ -360,9 +403,8 @@ export default function Generate() {
               </div>
             )}
 
-            {/* File upload — only for Default model */}
-            {selectedModel !== "param" && (
-              <div style={{ marginTop: 16 }}>
+            {/* File upload — available for both models */}
+            <div style={{ marginTop: 16 }}>
                 <h3 style={{ marginBottom: 12 }}>Upload Files (Optional)</h3>
                 <input
                   type="file"
@@ -427,7 +469,6 @@ export default function Generate() {
                   </div>
                 )}
               </div>
-            )}
 
             <button
               className="button"
