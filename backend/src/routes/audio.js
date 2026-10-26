@@ -1,51 +1,43 @@
 const express = require("express");
-const multer = require("multer");
-
+const upload = require("../middleware/upload"); // Uses project's standard multer middleware
 const router = express.Router();
-
-// Store uploaded audio in memory as a buffer
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB limit
-});
 
 const INDIC_ASR_URL =
   process.env.INDIC_ASR_BASE_URL ||
-  "https://elegant-simon-cos-cayman.trycloudflare.com/v1/audio/transcriptions";
+  "https://elegant-simon-cos-cayman.trycloudflare.com/v1";
 const INDIC_ASR_KEY =
   process.env.INDIC_ASR_API_KEY || "sk-uUJ08BmqtEuXMcYIrsQ30w";
 const DEFAULT_MODEL = process.env.INDIC_ASR_MODEL || "asr-indic-transcribe";
 
-/**
- * POST /api/audio (or /audio/transcribe depending on app.js mount)
- * Accepts multipart/form-data:
- *   - audio / file: binary audio file (.wav, .mp3, .ogg, .flac, etc.)
- *   - language: optional ISO-639 language code (e.g., 'hi', 'ta', 'te')
- *   - model: optional model name ('asr-indic-transcribe' or 'indic-transcribe-flex')
- */
-router.post("/", upload.single("audio"), async (req, res) => {
+// Existing mock route
+router.post("/", (req, res) => {
+  res.json({ audioUrl: "sample.mp3" });
+});
+
+// New Indic ASR Transcription Route
+router.post("/transcribe", upload.single("file"), async (req, res) => {
   try {
-    const file = req.file;
-    if (!file) {
-      return res.status(400).json({ error: "No audio file uploaded (expected field: 'audio')" });
+    if (!req.file) {
+      return res.status(400).json({ error: "No audio file provided (field name: 'file')" });
     }
 
     const { language, model } = req.body;
 
-    // Build the multipart payload for the upstream Indic ASR API
+    // Build multipart/form-data for the Indic ASR API
     const formData = new FormData();
-    const audioBlob = new Blob([file.buffer], {
-      type: file.mimetype || "audio/wav",
+    const audioBlob = new Blob([req.file.buffer], {
+      type: req.file.mimetype || "audio/wav",
     });
 
-    formData.append("file", audioBlob, file.originalname || "audio.wav");
+    formData.append("file", audioBlob, req.file.originalname || "audio.wav");
     formData.append("model", model || DEFAULT_MODEL);
 
     if (language) {
       formData.append("language", language);
     }
 
-    const response = await fetch(INDIC_ASR_URL, {
+    // Call upstream Indic ASR API
+    const response = await fetch(`${INDIC_ASR_URL}/audio/transcriptions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${INDIC_ASR_KEY}`,
@@ -57,16 +49,15 @@ router.post("/", upload.single("audio"), async (req, res) => {
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: data.error?.message || "Indic ASR API request failed",
+        error: data.error?.message || "Indic ASR transcription failed",
         details: data,
       });
     }
 
-    // Returns: { text: "...", language: "...", duration: 2.0, ... }
     return res.status(200).json(data);
-  } catch (err) {
-    console.error("Indic ASR Transcription error:", err);
-    return res.status(500).json({ error: "Failed to transcribe audio", details: err.message });
+  } catch (error) {
+    console.error("ASR Transcription error:", error);
+    return res.status(500).json({ error: "Internal server error during transcription" });
   }
 });
 
