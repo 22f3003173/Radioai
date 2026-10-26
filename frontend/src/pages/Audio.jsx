@@ -10,36 +10,109 @@ export default function Audio() {
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [playingIndex, setPlayingIndex] = useState(null);
-  const {generateText, translatedText, setTranslatedText } = useAppContext();
+  const { generateText, translatedText, setTranslatedText } = useAppContext();
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioRefs = useRef({});
 
+  /* 🗣️ Auto-Transcribe Audio using Indic ASR API */
+  const transcribeAudio = async (audioBlob, language = "hi") => {
+    try {
+      const formData = new FormData();
+      formData.append("file", audioBlob, "audio.wav");
+      if (language) formData.append("language", language);
+
+      const res = await fetch("http://localhost:5000/audio/transcribe", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Transcription failed");
+
+      return data.text;
+    } catch (err) {
+      console.error("Transcribe error:", err);
+      alert(`Transcription error: ${err.message}`);
+      return null;
+    }
+  };
+
+  /* Helper to attach transcribed text to an audio item */
+  const attachTranscript = (index, text) => {
+    const textBlob = new Blob([text], { type: "text/plain" });
+    const textFile = new File([textBlob], `transcript_${index + 1}.txt`, {
+      type: "text/plain",
+    });
+
+    setAudioItems((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              transcriptText: text,
+              transcriptFile: textFile,
+              transcribing: false,
+            }
+          : item
+      )
+    );
+  };
+
   /* 🎙️ Start Recording */
   const startRecording = async () => {
     if (recording) return;
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorderRef.current = new MediaRecorder(stream);
-    audioChunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
 
-    mediaRecorderRef.current.ondataavailable = (e) => {
-      audioChunksRef.current.push(e.data);
-    };
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data);
+      };
 
-    mediaRecorderRef.current.onstop = () => {
-      const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
-      const url = URL.createObjectURL(blob);
+      mediaRecorderRef.current.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+        const url = URL.createObjectURL(blob);
 
-      setAudioItems((prev) => [
-        ...prev,
-        { audio: blob, transcriptFile: null, url },
-      ]);
-    };
+        const targetIndex = audioItems.length;
 
-    mediaRecorderRef.current.start();
-    setRecording(true);
+        // Add recording to list in transcribing state
+        setAudioItems((prev) => [
+          ...prev,
+          {
+            audio: blob,
+            transcriptFile: null,
+            transcriptText: "Transcribing…",
+            transcribing: true,
+            url,
+          },
+        ]);
+
+        // Auto transcribe with Indic ASR API
+        const text = await transcribeAudio(blob);
+        if (text) {
+          attachTranscript(targetIndex, text);
+        } else {
+          setAudioItems((prev) =>
+            prev.map((item, i) =>
+              i === targetIndex
+                ? { ...item, transcriptText: null, transcribing: false }
+                : item
+            )
+          );
+        }
+      };
+
+      mediaRecorderRef.current.start();
+      setRecording(true);
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      alert("Could not access microphone.");
+    }
   };
 
   /* ⏹️ Stop Recording */
@@ -53,16 +126,20 @@ export default function Audio() {
     const newItems = Array.from(files).map((file) => ({
       audio: file,
       transcriptFile: null,
+      transcriptText: null,
+      transcribing: false,
       url: URL.createObjectURL(file),
     }));
     setAudioItems((prev) => [...prev, ...newItems]);
   };
 
-  /* 📝 Upload transcript */
+  /* 📝 Manual Upload transcript */
   const handleTranscriptUpload = (index, file) => {
     setAudioItems((prev) =>
       prev.map((item, i) =>
-        i === index ? { ...item, transcriptFile: file } : item
+        i === index
+          ? { ...item, transcriptFile: file, transcriptText: file.name }
+          : item
       )
     );
   };
@@ -71,7 +148,9 @@ export default function Audio() {
   const removeTranscript = (index) => {
     setAudioItems((prev) =>
       prev.map((item, i) =>
-        i === index ? { ...item, transcriptFile: null } : item
+        i === index
+          ? { ...item, transcriptFile: null, transcriptText: null }
+          : item
       )
     );
   };
@@ -80,7 +159,6 @@ export default function Audio() {
   const removeAudio = (index) => {
     const item = audioItems[index];
     if (item?.url) URL.revokeObjectURL(item.url);
-
     setAudioItems((prev) => prev.filter((_, i) => i !== index));
     delete audioRefs.current[index];
     if (playingIndex === index) setPlayingIndex(null);
@@ -100,7 +178,11 @@ export default function Audio() {
       const formData = new FormData();
 
       audioItems.forEach((item, index) => {
-        formData.append("audio", item.audio, item.audio.name || `recorded_audio_${index + 1}.wav`);
+        formData.append(
+          "audio",
+          item.audio,
+          item.audio.name || `recorded_audio_${index + 1}.wav`
+        );
         if (item.transcriptFile) {
           formData.append("transcript", item.transcriptFile);
         }
@@ -128,7 +210,8 @@ export default function Audio() {
         setGeneratedAudio(url);
       } else {
         const data = await response.json();
-        const audioUrl = data.url || data.audio_url || data.audioUrl || data.audio;
+        const audioUrl =
+          data.url || data.audio_url || data.audioUrl || data.audio;
         if (!audioUrl) throw new Error("No audio URL in response");
         setGeneratedAudio(audioUrl);
       }
@@ -146,7 +229,6 @@ export default function Audio() {
 
       <div className="page" style={{ padding: 0 }}>
         <div className="generate-layout">
-
           {/* LEFT */}
           <div className="generate-left">
             <div className="panel-header">
@@ -162,9 +244,7 @@ export default function Audio() {
                 <span
                   className={`audio-icon ${recording ? "recording" : ""}`}
                   title={recording ? "Stop recording" : "Record audio"}
-                  onClick={() =>
-                    recording ? stopRecording() : startRecording()
-                  }
+                  onClick={() => (recording ? stopRecording() : startRecording())}
                 >
                   {recording ? "⏹️" : "🎙️"}
                 </span>
@@ -220,45 +300,96 @@ export default function Audio() {
                   {playingIndex === index ? "⏸️" : "▶️"}
                 </span>
 
-                <span style={{ flex: 1 }}>
+                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {item.audio.name || `Recorded audio ${index + 1}`}
                 </span>
 
-                {/* TRANSCRIPT */}
-                <div style={{ position: "relative" }}>
+                {/* TRANSCRIPT CONTROLS */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {/* On-demand Transcribe with Indic ASR */}
                   <span
-                    onClick={() =>
-                      document
-                        .getElementById(`transcript-${index}`)
-                        .click()
-                    }
+                    title="Auto-Transcribe audio (Indic ASR)"
+                    style={{
+                      cursor: item.transcribing ? "wait" : "pointer",
+                      opacity: item.transcribing ? 0.5 : 1,
+                    }}
+                    onClick={async () => {
+                      if (item.transcribing) return;
+                      setAudioItems((prev) =>
+                        prev.map((it, i) =>
+                          i === index
+                            ? { ...it, transcriptText: "Transcribing…", transcribing: true }
+                            : it
+                        )
+                      );
+                      const text = await transcribeAudio(item.audio);
+                      if (text) {
+                        attachTranscript(index, text);
+                      } else {
+                        setAudioItems((prev) =>
+                          prev.map((it, i) =>
+                            i === index ? { ...it, transcribing: false } : it
+                          )
+                        );
+                      }
+                    }}
                   >
-                    📄
+                    🗣️
                   </span>
 
-                  {item.transcriptFile && (
+                  {/* Transcript text preview */}
+                  {item.transcriptText && (
                     <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeTranscript(index);
-                      }}
+                      title={item.transcriptText}
                       style={{
-                        position: "absolute",
-                        top: -6,
-                        right: -6,
-                        background: "#ef4444",
-                        color: "#fff",
-                        borderRadius: "50%",
-                        width: 14,
-                        height: 14,
-                        fontSize: 10,
-                        textAlign: "center",
-                        cursor: "pointer",
+                        fontSize: 12,
+                        color: "#9ca3af",
+                        maxWidth: 120,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      ×
+                      {item.transcriptText}
                     </span>
                   )}
+
+                  {/* Manual transcript file upload */}
+                  <div style={{ position: "relative" }}>
+                    <span
+                      title="Upload manual transcript file"
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        document.getElementById(`transcript-${index}`).click()
+                      }
+                    >
+                      📄
+                    </span>
+
+                    {item.transcriptFile && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeTranscript(index);
+                        }}
+                        style={{
+                          position: "absolute",
+                          top: -6,
+                          right: -6,
+                          background: "#ef4444",
+                          color: "#fff",
+                          borderRadius: "50%",
+                          width: 14,
+                          height: 14,
+                          fontSize: 10,
+                          textAlign: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        ×
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <input
@@ -310,6 +441,7 @@ export default function Audio() {
             <div className="panel-header">
               <h3>Generated Audio Output</h3>
             </div>
+
             {generatedAudio ? (
               <audio
                 controls
