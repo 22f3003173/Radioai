@@ -140,7 +140,6 @@ export default function Audio() {
             >
               {playingIndex === index ? "⏸️" : "▶️"}
             </span>
-
             <audio
               ref={(el) => (audioRefs.current[index] = el)}
               src={item.audioUrl}
