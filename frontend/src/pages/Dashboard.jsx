@@ -45,7 +45,7 @@ export default function Dashboard() {
             title="Generate Audio"
             description="Convert text into audio"
             icon="🔊"
-            link="https://radioai.onrender.com"
+            link="lakes-memphis-return-visits.trycloudfare.com"
             external
           />
         </div>
