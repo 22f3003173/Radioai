@@ -141,23 +141,6 @@ export default function Audio() {
             >
               {playingIndex === index ? "⏸️" : "▶️"}
             </span>
-            <audio
-              ref={(el) => (audioRefs.current[index] = el)}
-              src={item.audioUrl}
-              onEnded={() => setPlayingIndex(null)}
-            />
-
-            <span
-              style={{
-                flex: 1,
-                minWidth: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {item.audio.name || `Recorded audio ${index + 1}`}
-            </span>
 
             {/* TRANSCRIPT CONTROLS */}
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
