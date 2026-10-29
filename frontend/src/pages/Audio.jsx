@@ -57,40 +57,42 @@ export default function Audio() {
   };
 
   /* 🔊 Generate Audio */
-  const handleGenerate = async () => {
-    if (!textInput.trim() && audioItems.length === 0) {
-      alert("Please provide some text or upload audio first.");
-      return;
+ const handleGenerate = async () => {
+  if (!textInput.trim()) {
+    alert("Please type some text to convert to audio.");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const formData = new FormData();
+    formData.append("text", textInput);
+
+    const response = await fetch(`${API_BASE_URL}/audio/generate`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      let msg = "Failed to generate audio";
+      try {
+        const err = await response.json();
+        msg = err.error || msg;
+      } catch {}
+      throw new Error(msg);
     }
 
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("text", textInput);
-      
-      audioItems.forEach((item, index) => {
-        formData.append(`audio_${index}`, item.audio);
-      });
-
-      const response = await fetch(`${BACKEND_URL}/generate-audio`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate audio");
-      }
-
-      const result = await response.json();
-      alert("Audio generated successfully!");
-      // Handle success routing or state update if needed
-    } catch (err) {
-      console.error("Generation error:", err);
-      alert("Error generating audio from backend.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const blob = await response.blob();
+    if (generatedUrl) URL.revokeObjectURL(generatedUrl);
+    setGeneratedUrl(URL.createObjectURL(blob));
+  } catch (err) {
+    console.error("Generation error:", err);
+    alert(err.message || "Error generating audio from backend.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="audio-container">
