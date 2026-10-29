@@ -3,11 +3,10 @@ const upload = require("../middleware/upload"); // Uses project's standard multe
 const router = express.Router();
 
 const INDIC_ASR_URL =
-  process.env.INDIC_ASR_BASE_URL ||
-  "https://elegant-simon-cos-cayman.trycloudflare.com/v1";
+  process.env.INDIC_ASR_BASE_URL;
 const INDIC_ASR_KEY =
-  process.env.INDIC_ASR_API_KEY || "sk-uUJ08BmqtEuXMcYIrsQ30w";
-const DEFAULT_MODEL = process.env.INDIC_ASR_MODEL || "asr-indic-transcribe";
+  process.env.INDIC_ASR_API_KEY;
+const DEFAULT_MODEL = process.env.INDIC_ASR_MODEL;
 
 // Existing mock route
 router.post("/", (req, res) => {
