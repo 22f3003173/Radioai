@@ -230,6 +230,12 @@ export default function Audio() {
         >
           {loading ? "Generating..." : "Generate Audio"}
         </button>
+        {generatedUrl && (
+  <div style={{ marginTop: 20 }}>
+    <audio controls src={generatedUrl} style={{ width: "100%" }} />
+    <a href={generatedUrl} download="generated-audio.wav">Download</a>
+  </div>
+)}
       </div>
     </div>
   );
