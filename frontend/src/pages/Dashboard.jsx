@@ -45,7 +45,7 @@ export default function Dashboard() {
             title="Generate Audio"
             description="Convert text into audio"
             icon="🔊"
-            link="lakes-memphis-return-visits.trycloudfare.com"
+            link=link="/audio"
             external
           />
         </div>
