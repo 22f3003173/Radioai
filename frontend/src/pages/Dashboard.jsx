@@ -45,7 +45,7 @@ export default function Dashboard() {
             title="Generate Audio"
             description="Convert text into audio"
             icon="🔊"
-            link=link="/audio"
+            link="/audio"
             external
           />
         </div>
