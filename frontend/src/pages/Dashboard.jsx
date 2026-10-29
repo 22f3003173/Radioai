@@ -46,7 +46,7 @@ export default function Dashboard() {
             description="Convert text into audio"
             icon="🔊"
             link="/audio"
-            external
+            external={false}
           />
         </div>
       </div>
