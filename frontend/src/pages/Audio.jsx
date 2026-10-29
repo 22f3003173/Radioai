@@ -1,12 +1,12 @@
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-const BACKEND_URL = "https://radioai.onrender.com";
+import { API_BASE_URL } from "../config";
 
 export default function Audio() {
   const navigate = useNavigate();
   const [audioItems, setAudioItems] = useState([]);
   const [playingIndex, setPlayingIndex] = useState(null);
-  const [textInput, setTextInput] = useState("");
+  const [loading, setLoading] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState(null);
   const audioRefs = useRef({});
 
@@ -29,7 +29,7 @@ export default function Audio() {
       formData.append("file", audioBlob, "audio.wav");
       if (language) formData.append("language", language);
 
-      const response = await fetch(`${BACKEND_URL}/audio/transcribe`, {
+      const response = await fetch(`${API_BASE_URL}/audio/transcribe`, {
         method: "POST",
         credentials: "include",
         body: formData,
