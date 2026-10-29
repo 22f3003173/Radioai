@@ -23,7 +23,7 @@ export default function Audio() {
       formData.append("file", audioBlob, "audio.wav");
       if (language) formData.append("language", language);
 
-      const res = await fetch("http://localhost:5000/audio/transcribe", {
+      const response = await fetch("https://radioai.onrender.com/generate-audio", {
         method: "POST",
         credentials: "include",
         body: formData,
