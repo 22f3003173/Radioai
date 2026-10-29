@@ -7,7 +7,7 @@ export default function Audio() {
   const [audioItems, setAudioItems] = useState([]);
   const [playingIndex, setPlayingIndex] = useState(null);
   const [textInput, setTextInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [generatedUrl, setGeneratedUrl] = useState(null);
   const audioRefs = useRef({});
 
   // Handle local audio file upload
