@@ -45,7 +45,7 @@ export default function Dashboard() {
             title="Generate Audio"
             description="Convert text into audio"
             icon="🔊"
-            link="https://establishment-becoming-tasks-dimension.trycloudflare.com"
+            link="https://radioai.onrender.com"
             external
           />
         </div>
